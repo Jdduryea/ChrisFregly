@@ -60,10 +60,6 @@ int temperature = 0;
 int humidity = 0;
 int light = 0;
 
-// Values for display
-int8_t m_bits[4] = {0};                     /* array to store the single digits of the value */
-
-
 /* Variables for buzzer music */
 int glob_len = 15;         /* the number of notes */
 char glob_notes[] = "ccggaagffeeddc "; //notes in the song
@@ -74,9 +70,12 @@ int glob_tempo = 200;
 void setup() 
 {
   Serial.begin(9600);
-  /* Initialize 4-Digit Display */
+   /* Initialize 4-Digit Display */
   tm1637.init();
   tm1637.set(BRIGHT_TYPICAL);
+
+  /* Initialize 4-Digit Display */
+  pinMode(BUZZER_PIN, OUTPUT);
   dht.begin();                         /* initialize temperature humidity sensor */
 
 }
@@ -100,19 +99,36 @@ void loop()
     Serial.println("--------------");
 
     // IF moisture is less than 300 or more than 700, this is bad
-    if ((moisture <= 300) || (moisture >= 700)){
+    int mBit = 0;
+    if ((moisture < 100) || (moisture > 700)){
+      mBit = 1;
       //playMusic(glob_len, glob_notes, glob_beats, glob_tempo);
     }
     
-     memset(m_bits, 0, 4);                             /* reset array before we use it */
-     for(int i = 3; i >= 0; i--) 
-     {
-         /* Convert the value to individual decimal digits for display */
-         m_bits[i] = moisture % 10;
-         moisture = moisture / 10;  
-         tm1637.display(i, m_bits[i]);                 /* display on 4-Digit Display */
-     }
-     
+    
+    // If temperature is less than 16 or more than 27 C, this is bad
+    int tBit = 0;
+    if ((temperature < 16) || (temperature > 27)){
+      tBit = 1;
+    }
+
+     // If humidity is less than 50 or more than 100, this is bad
+    int hBit = 0;
+    if ((humidity < 50) || (humidity > 100)){
+      hBit = 1;
+    }
+
+     // If light is less than 1000, this is bad
+    int lBit = 0;
+    if (light < 500){
+      lBit = 1;
+    }
+
+    tm1637.display(0, mBit);
+    tm1637.display(1, tBit);
+    tm1637.display(2, hBit);
+    tm1637.display(3, lBit);
+    
     delay(500);  //small delay so that the number doesn't change too quickly to read
 }
 
